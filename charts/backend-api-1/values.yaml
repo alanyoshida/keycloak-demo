@@ -1,0 +1,15 @@
+image:
+  repository: alanyoshida/backend-api-1
+  tag: latest
+  pullPolicy: IfNotPresent
+envs:
+  - name: KEYCLOAK_HOST
+    value: "http://keycloak.default.svc.cluster.local"
+  - name: "CLIENT_ID"
+    value: "backend-api-1"
+  - name: "CLIENT_SECRET"
+    value: "O9XNoYahwjRgOXbnXrPAL6faCxkHpfvV"
+  - name: "BACKEND_API_1_HOST"
+    value: "http://backend-api-1.default.svc.cluster.local"
+  - name: "BACKEND_API_2_HOST"
+    value: "http://backend-api-2.default.svc.cluster.local"

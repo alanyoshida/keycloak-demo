@@ -1,0 +1,4 @@
+image:
+  repository: alanyoshida/frontend
+  tag: latest
+  pullPolicy: IfNotPresent

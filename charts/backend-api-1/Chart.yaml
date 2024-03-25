@@ -1,0 +1,9 @@
+apiVersion: v2
+name: backend-api-1
+version: v0.1.2
+appVersion: v0.1.1
+description: Simple Golang Api
+maintainers:
+  - name: Alan Luis Yoshida de Oliveira
+    email: alanyoshida88@gmail.com
+    url: https://github.com/alanyoshida
