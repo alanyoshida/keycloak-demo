@@ -128,6 +128,26 @@ Edit the file `./charts/backend-api-2/values.yaml` and set the `client secret` f
 - name: CLIENT_SECRET
   value: ""
 ```
+### How to access the demo
+
+You can configure the `/etc/hosts` to access using the following domains, but you can also use the port-forwarding like:
+
+| app | description |
+|-|-|
+| frontend  | port_forwards to 9999 |
+| backend-api-1 | port_forwards to 3000 |
+| backend-api-2 | port_forwards to 4000 |
+
+But for keycloak always use the `keycloak.default.svc.cluster.local` because it matters to validate the provider in token generation.
+
+---
+
+`/etc/hosts` file:
+```
+127.0.0.1 frontend.default.svc.cluster.local
+127.0.0.1 backend-api-1.default.svc.cluster.local
+127.0.0.1 backend-api-2.default.svc.cluster.local
+```
 
 ### How to test
 
