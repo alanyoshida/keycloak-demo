@@ -144,9 +144,15 @@ But for keycloak always use the `keycloak.default.svc.cluster.local` because it 
 
 `/etc/hosts` file:
 ```
+127.0.0.1 keycloak.default.svc.cluster.local
 127.0.0.1 frontend.default.svc.cluster.local
 127.0.0.1 backend-api-1.default.svc.cluster.local
 127.0.0.1 backend-api-2.default.svc.cluster.local
+```
+
+You also can use host header, like:
+```bash
+curl --header 'Host: backend-api-1.default.svc.cluster.local' http://127.0.0.1/
 ```
 
 ### How to test
