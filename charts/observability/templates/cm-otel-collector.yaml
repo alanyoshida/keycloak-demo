@@ -1,0 +1,41 @@
+{{- if .Values.enabled -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector
+data:
+  otel-collector.yaml: |
+    extensions:
+      # basicauth/server:
+      #   htpasswd:
+      #     inline: admin:1234
+    receivers:
+      otlp:
+        protocols:
+          http:
+            include_metadata: true
+            cors:
+              allowed_origins:
+                - "http://*"
+                - "https://*"
+              allowed_headers: ["*"]
+              max_age: 7200
+          grpc:
+
+    exporters:
+      otlp:
+        endpoint: tempo:4317
+        tls:
+          insecure: true
+      prometheusremotewrite:
+        endpoint: http://prometheus.default.svc.cluster.local:9090/api/v1/write
+    service:
+      # extensions: [basicauth/server]
+      pipelines:
+        traces:
+          receivers: [otlp]
+          exporters: [otlp]
+        metrics:
+          receivers: [otlp]
+          exporters: [prometheusremotewrite]
+{{- end }}

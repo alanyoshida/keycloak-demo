@@ -1,0 +1,47 @@
+{{- if .Values.enabled -}}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  labels:
+    app.kubernetes.io/name: otelCollector
+spec:
+  replicas: {{ .Values.otelCollector.replicaCount }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: otelCollector
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: otelCollector
+    spec:
+      serviceAccountName: {{ .Values.otelCollector.serviceAccountName }}
+      containers:
+        - name: {{ .Chart.Name }}
+          image: "{{ .Values.otelCollector.image.repository }}:{{ .Values.otelCollector.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.otelCollector.image.pullPolicy }}
+          args: ["--config=/configs/otel-collector.yaml"]
+          ports:
+            - name: grpc
+              containerPort: 4317
+              protocol: TCP
+            - name: http
+              containerPort: {{ .Values.otelCollector.service.port }}
+              protocol: TCP
+          envs:
+            {{- toYaml .Values.otelCollector.envs | nindent 12 }}
+          livenessProbe:
+            {{- toYaml .Values.otelCollector.livenessProbe | nindent 12 }}
+          readinessProbe:
+            {{- toYaml .Values.otelCollector.readinessProbe | nindent 12 }}
+          resources:
+            {{- toYaml .Values.otelCollector.resources | nindent 12 }}
+          {{- with .Values.otelCollector.volumeMounts }}
+          volumeMounts:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.otelCollector.volumes }}
+      volumes:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}
