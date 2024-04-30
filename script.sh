@@ -28,7 +28,7 @@ check_dependencies(){
 
 check(){
     if [ ! command -v $1 &> /dev/null ]; then
-        echo "${$BOLDRED}$1 is not installed, please install. Check link in README.md.${CLEARFORMAT}"
+        echo "${BOLDRED}$1 is not installed, please install. Check link in README.md.${CLEARFORMAT}"
         exit 1
     else
         echo -e "${GREEN}$1 - OK${CLEARFORMAT}"
@@ -47,14 +47,9 @@ up (){
 
 setup (){
     echo -e "${BOLD}Checking project dependencies ...${CLEARFORMAT}"
-    check_dependencies
-    echo -e "\n${BOLD}Cloning repos ...${CLEARFORMAT}"
-    clone_repos
-    echo -e "\n${BOLD}Creating Symlinks into ./repos${CLEARFORMAT}"
-    symlinks
     gum confirm "Quer criar um novo cluster kind ?"
     if [ $? -eq 0 ]; then
-        echo "\n${BOLD}Creating kind cluster${CLEARFORMAT}"
+        echo -e "\n${BOLD}Creating kind cluster${CLEARFORMAT}"
         bash ./kind-with-registry.sh
     fi
     gum spin --show-output --title "Waiting 10s for cluster ..." -- sleep 10
@@ -63,7 +58,7 @@ setup (){
     if [ "$CONFIG" == "kind-kind" ]; then
         gum confirm "Quer instalar o nginx no cluster $CONFIG ?"
         if [ $? -eq 0 ]; then
-            echo "kubectl apply -f ./nginx-ingress/deploy.yaml"
+            echo -e "kubectl apply -f ./nginx-ingress/deploy.yaml"
             kubectl apply -f ./nginx-ingress/deploy.yaml
         fi
         echo -e "\n${BOLD}Starting tilt${CLEARFORMAT}"
@@ -79,20 +74,6 @@ check_folder() {
         # Folder does not exists
         return 1
     fi
-}
-
-clone_repos () {
-    cd ..
-    check_folder "$(pwd)/repo-name"
-    if [ $? -eq 1 ]; then
-        echo -e "\n${BOLD}Cloning repo ...${CLEARFORMAT}"
-        git clone git@....
-    fi
-    cd -
-}
-
-symlinks() {
-  ln -s $(pwd)/../project repos/
 }
 
 install_gum() {
