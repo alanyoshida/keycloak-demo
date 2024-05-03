@@ -21,6 +21,7 @@ k8s_yaml(helm('charts/backend-api-1', name="backend-api-1"))
 k8s_yaml(helm('charts/backend-api-2', name="backend-api-2"))
 k8s_yaml(helm('charts/frontend', name="frontend"))
 k8s_yaml(helm('charts/nginx-ingress', name="nginx-ingress"))
+k8s_yaml(helm('charts/metallb', name="metallb"))
 
 # Build: tell Tilt what images to build from which directories
 docker_build('alanyoshida/backend-api-1', './backend-api-1',
