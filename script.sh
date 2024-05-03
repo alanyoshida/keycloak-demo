@@ -74,7 +74,7 @@ setup (){
     if [ $? -eq 0 ]; then
       LB_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
       # point kind.cluster domain (and subdomains) to our load balancer
-      echo "address=/cluster.local/$LB_IP" | sudo tee /etc/dnsmasq.d/kind.k8s.conf
+      echo "address=/svc.cluster.local/$LB_IP" | sudo tee /etc/dnsmasq.d/kind.k8s.conf
       # restart dnsmasq
       sudo systemctl restart dnsmasq
     fi

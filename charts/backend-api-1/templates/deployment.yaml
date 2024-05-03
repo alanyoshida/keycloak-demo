@@ -32,7 +32,10 @@ spec:
         image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         ports:
-        - containerPort: 3000
+        - name: api
+          containerPort: 3000
+        - name: debug
+          containerPort: 2345
         env:
 {{- toYaml .Values.envs | nindent 8 }}
 

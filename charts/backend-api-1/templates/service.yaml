@@ -6,6 +6,11 @@ spec:
   selector:
     app.kubernetes.io/name: {{ .Chart.Name }}
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 80
       targetPort: 3000
+    - name: debug
+      protocol: TCP
+      port: 2345
+      targetPort: 2345
