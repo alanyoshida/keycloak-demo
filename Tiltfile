@@ -2,7 +2,7 @@ load('ext://helm_resource', 'helm_resource', 'helm_repo')
 
 # Install nginx ingress
 # k8s_yaml('nginx-ingress/deploy.yaml')
-# k8s_yaml('nginx-ingress/keycloak-ingress.yaml')
+k8s_yaml('ingresses/keycloak-ingress.yaml')
 
 # Install prometheus
 # helm_repo('prometheus-community', 'https://prometheus-community.github.io/helm-charts')
@@ -20,7 +20,7 @@ helm_resource('keycloak', 'bitnami/keycloak', flags=['--version=19.3.0'])
 k8s_yaml(helm('charts/backend-api-1', name="backend-api-1"))
 k8s_yaml(helm('charts/backend-api-2', name="backend-api-2"))
 k8s_yaml(helm('charts/frontend', name="frontend"))
-k8s_yaml(helm('charts/nginx-ingress', name="nginx-ingress"))
+# k8s_yaml(helm('charts/nginx-ingress', name="nginx-ingress"))
 k8s_yaml(helm('charts/metallb', name="metallb"))
 
 # Build: tell Tilt what images to build from which directories

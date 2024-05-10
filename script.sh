@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x;
 
 COLOR_RED="31"
 COLOR_GREEN="32"
@@ -39,11 +40,78 @@ check(){
 
 up (){
   CONFIG=$(kubectl config current-context)
-  if [ "$CONFIG" == "kind-kind" ]; then
+  if [ "$CONFIG" == "kind-keycloak" ]; then
     tilt up
   else
     echo -e "\e[1;31mAtenção: Você não esta no kind, troque o contexto\e[0m"
   fi
+}
+
+create_kind (){
+    # CREATE KIND CLUSTER
+    gum confirm "Quer criar um novo cluster kind ?"
+    if [ $? -eq 0 ]; then
+        echo -e "\n${BOLD}Creating kind cluster${CLEARFORMAT}"
+        bash ./kind-with-registry.sh
+        kubectl wait -A --for=condition=ready pod --field-selector=status.phase!=Succeeded --timeout=1m
+    fi
+    # gum spin --show-output --title "Waiting 10s for cluster ..." -- sleep 10
+}
+
+configure_nginx (){
+    # Configure nginx ingress
+    CONFIG=$(kubectl config current-context)
+    if [ "$CONFIG" == "kind-keycloak" ]; then
+      gum confirm "Deseja configurar o nginx ingress?"
+      if [ $? -eq 0 ]; then
+        # kubectl apply -f charts/nginx-ingress/
+        echo -e "\n${BOLD}Installing nginx ingress${CLEARFORMAT}"
+        kubectl apply -f cluster-configs/nginx-ingress.yaml
+        kubectl wait -n ingress-nginx --for=condition=ready pod --field-selector=status.phase!=Succeeded --timeout=1m
+      fi
+    fi
+}
+
+configure_metallb (){
+    # METAL LB
+    CONFIG=$(kubectl config current-context)
+    if [ "$CONFIG" == "kind-keycloak" ]; then
+      gum confirm "Deseja configurar o metallb?"
+      if [ $? -eq 0 ]; then
+        echo -e "\n${BOLD}Configuring metallb${CLEARFORMAT}"
+        DOCKER_CIDR=$(docker network inspect kind -f '{{(index .IPAM.Config 0).Subnet}}')
+        DOCKER_CIDR_2_OCTECTS=$(echo $DOCKER_CIDR | sed -E 's/([0-9]{0,3}\.[0-9]{1,3}).*/\1/')
+        yq -i -y ".metallb.IPAddressPool.addresses[0]=\"$DOCKER_CIDR_2_OCTECTS.255.100-$DOCKER_CIDR_2_OCTECTS.255.150\"" charts/metallb/values.yaml
+        kubectl apply -f cluster-configs/metallb.yaml
+        kubectl wait -n metallb-system --for=condition=ready pod --field-selector=status.phase!=Succeeded --timeout=1m
+        helm install metallb charts/metallb/
+      fi
+    fi
+}
+
+configure_dnsmasq (){
+    # DNSMASQ
+    gum confirm "Quer configurar o dnsmasq?"
+    if [ $? -eq 0 ]; then
+sudo sed -i '1s/^/nameserver 127.0.0.1\n/' /etc/resolv.conf
+sudo cat <<EOF | sudo tee -a /etc/dnsmasq.conf
+bind-interfaces
+listen-address=127.0.0.1
+server=8.8.8.8
+server=8.8.4.4
+conf-dir=/etc/dnsmasq.d/,*.conf
+EOF
+      LB_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+      if [ -d "$LB_IP" ]; then
+        echo -e "\n LB_IP=$LB_IP"
+        gum spin --show-output --title "Waiting 10s for cluster ..." -- sleep 10
+        LB_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
+      fi
+      # point kind.cluster domain (and subdomains) to our load balancer
+      echo "address=/default.svc.cluster.local/$LB_IP" | sudo tee /etc/dnsmasq.d/kind.k8s.conf
+      # restart dnsmasq
+      sudo systemctl restart dnsmasq
+    fi
 }
 
 setup (){
@@ -51,33 +119,13 @@ setup (){
     echo -e "${BOLD}Checking project dependencies ...${CLEARFORMAT}"
     check_dependencies
 
-    # CREATE KIND CLUSTER
-    gum confirm "Quer criar um novo cluster kind ?"
-    if [ $? -eq 0 ]; then
-        echo -e "\n${BOLD}Creating kind cluster${CLEARFORMAT}"
-        bash ./kind-with-registry.sh
-        kubectl wait -A --for=condition=ready pod --field-selector=status.phase!=Succeeded --timeout=5m
-    fi
-    # gum spin --show-output --title "Waiting 10s for cluster ..." -- sleep 10
+    create_kind
 
-    # METAL LB
-    gum confirm "Deseja configurar o metallb?"
-    if [ $? -eq 0 ]; then
-      echo -e "\n${BOLD}Configuring metallb${CLEARFORMAT}"
-      DOCKER_CIDR=$(docker network inspect kind -f '{{(index .IPAM.Config 0).Subnet}}')
-      DOCKER_CIDR_2_OCTECTS=$(echo $DOCKER_CIDR | sed -E 's/([0-9]{0,3}\.[0-9]{1,3}).*/\1/')
-      cat charts/metallb/values.yaml | yq ".metallb.IPAddressPool.addresses[0]=\"$DOCKER_CIDR_2_OCTECTS.255.200-$DOCKER_CIDR_2_OCTECTS.255.250\"" > charts/metallb/values.yaml
-    fi
+    configure_nginx
 
-    # DNSMASQ
-    gum confirm "Quer configurar o dnsmasq?"
-    if [ $? -eq 0 ]; then
-      LB_IP=$(kubectl get svc -n ingress-nginx ingress-nginx-controller -o jsonpath='{.status.loadBalancer.ingress[0].ip}')
-      # point kind.cluster domain (and subdomains) to our load balancer
-      echo "address=/svc.cluster.local/$LB_IP" | sudo tee /etc/dnsmasq.d/kind.k8s.conf
-      # restart dnsmasq
-      sudo systemctl restart dnsmasq
-    fi
+    configure_metallb
+
+    configure_dnsmasq
 
     # K8S CONFIG
     up
@@ -140,6 +188,12 @@ case "$1" in
     ;;
   install_gum)
     install_gum
+    ;;
+  metallb)
+    configure_metallb
+    ;;
+  dnsmasq)
+    configure_dnsmasq
     ;;
   "--help"|"-h")
     print_help

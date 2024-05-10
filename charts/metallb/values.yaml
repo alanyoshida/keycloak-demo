@@ -1,8 +1,6 @@
-
 metallb:
   IPAddressPool:
     addresses:
-      - "172.18.255.200-172.18.255.250"
-
+      - 172.18.255.200-172.18.255.250
   example:
     enabled: false
