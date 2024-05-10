@@ -27,6 +27,7 @@ check_dependencies(){
     check kubectl
     check docker
     check helm
+    check dnsmasq
 }
 
 check(){
@@ -186,7 +187,7 @@ case "$1" in
   dependencies)
     check_dependencies
     ;;
-  install_gum)
+  install)
     install_gum
     ;;
   metallb)
